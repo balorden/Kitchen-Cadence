@@ -35,6 +35,7 @@ import { CsvImportExportModal } from './components/CsvImportExportModal';
 import { RouteRunView } from './components/RouteRunView';
 import { AllTasksView } from './components/AllTasksView';
 import { PipelineKanbanView } from './components/PipelineKanbanView';
+import { ConfirmModal } from './components/ConfirmModal';
 
 import {
   Search,
@@ -46,6 +47,7 @@ import {
   CheckCircle2,
   AlertCircle,
   Clock,
+  Trash2,
 } from 'lucide-react';
 
 export default function App() {
@@ -97,6 +99,23 @@ export default function App() {
   const [isAddEditOpen, setIsAddEditOpen] = useState(false);
   const [editingRestaurant, setEditingRestaurant] = useState<Restaurant | null>(null);
 
+  // In-app Confirmation Dialog state (Bypasses iframe window.confirm blocking)
+  const [confirmDialog, setConfirmDialog] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    confirmLabel?: string;
+    isDestructive?: boolean;
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    confirmLabel: 'Delete',
+    isDestructive: true,
+    onConfirm: () => {},
+  });
+
   // Quick Log modal state
   const [logModalTarget, setLogModalTarget] = useState<{
     restaurant: Restaurant;
@@ -138,17 +157,62 @@ export default function App() {
 
   // Handlers for Restaurants
   const handleSaveRestaurant = (updated: Restaurant) => {
+    const finalRecord: Restaurant = {
+      ...updated,
+      id: updated.id || `rest-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+    };
     setRestaurants((prev) => {
-      const exists = prev.some((r) => r.id === updated.id);
+      const exists = prev.some((r) => r.id === finalRecord.id);
       if (exists) {
-        return prev.map((r) => (r.id === updated.id ? updated : r));
+        return prev.map((r) => (r.id === finalRecord.id ? finalRecord : r));
       }
-      return [updated, ...prev];
+      return [finalRecord, ...prev];
     });
-    if (selectedRestaurant?.id === updated.id) {
-      setSelectedRestaurant(updated);
+    if (selectedRestaurant?.id === finalRecord.id) {
+      setSelectedRestaurant(finalRecord);
     }
-    showToast(`Saved account: ${updated.name}`);
+    showToast(`Saved account: ${finalRecord.name}`);
+  };
+
+  const handleDeleteRestaurant = (restaurantId: string, restaurantName?: string) => {
+    const target = restaurants.find((r) => r.id === restaurantId);
+    const name = restaurantName || target?.name || 'this prospect';
+
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Delete Prospect',
+      message: `Are you sure you want to delete "${name}"? This will remove the prospect from all views, along with all their touchpoint interaction logs and open tasks.`,
+      confirmLabel: 'Delete Prospect',
+      isDestructive: true,
+      onConfirm: () => {
+        setRestaurants((prev) => prev.filter((r) => r.id !== restaurantId));
+        setLogs((prev) => prev.filter((l) => l.restaurant_id !== restaurantId));
+        setTodos((prev) => prev.filter((t) => t.restaurant_id !== restaurantId));
+        if (selectedRestaurant?.id === restaurantId) {
+          setSelectedRestaurant(null);
+        }
+        setConfirmDialog((prev) => ({ ...prev, isOpen: false }));
+        showToast(`Deleted prospect: ${name}`);
+      },
+    });
+  };
+
+  const handleClearAllRestaurants = () => {
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Clear All Prospects & Start Fresh',
+      message: 'Are you sure you want to delete ALL prospects, logs, and tasks? You will be starting with an empty territory so you can create new prospects from scratch.',
+      confirmLabel: 'Delete All Prospects',
+      isDestructive: true,
+      onConfirm: () => {
+        setRestaurants([]);
+        setLogs([]);
+        setTodos([]);
+        setSelectedRestaurant(null);
+        setConfirmDialog((prev) => ({ ...prev, isOpen: false }));
+        showToast('All prospects deleted. Ready to create from scratch.');
+      },
+    });
   };
 
   // Handlers for Logs (Rule 2)
@@ -190,10 +254,18 @@ export default function App() {
   };
 
   const handleDeleteLog = (logId: string) => {
-    if (confirm('Delete this touchpoint log? Official follow-up count will update dynamically.')) {
-      setLogs((prev) => prev.filter((l) => l.id !== logId));
-      showToast('Deleted interaction log');
-    }
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Delete Touchpoint Note',
+      message: 'Are you sure you want to delete this interaction log? Your official follow-up count and attempts will update dynamically.',
+      confirmLabel: 'Delete Note',
+      isDestructive: true,
+      onConfirm: () => {
+        setLogs((prev) => prev.filter((l) => l.id !== logId));
+        setConfirmDialog((prev) => ({ ...prev, isOpen: false }));
+        showToast('Deleted interaction log');
+      },
+    });
   };
 
   // Handlers for Tasks (Rule 3)
@@ -512,10 +584,22 @@ export default function App() {
 
             {/* Results Count Banner */}
             <div className="flex items-center justify-between text-xs text-neutral-500 px-1">
-              <span>
-                Showing <strong className="text-neutral-800 font-mono">{filteredRestaurants.length}</strong> of{' '}
-                <strong className="text-neutral-800 font-mono">{restaurants.length}</strong> restaurant accounts
-              </span>
+              <div className="flex items-center gap-3">
+                <span>
+                  Showing <strong className="text-neutral-800 font-mono">{filteredRestaurants.length}</strong> of{' '}
+                  <strong className="text-neutral-800 font-mono">{restaurants.length}</strong> restaurant accounts
+                </span>
+                {restaurants.length > 0 && (
+                  <button
+                    onClick={handleClearAllRestaurants}
+                    className="text-[11px] text-neutral-400 hover:text-rose-600 transition-colors flex items-center gap-1 font-medium ml-2"
+                    title="Delete all prospects and start from a clean slate"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Clear All</span>
+                  </button>
+                )}
+              </div>
               {windowFilter === 'in_window' && (
                 <span className="text-emerald-700 font-medium flex items-center gap-1">
                   <Clock className="w-3.5 h-3.5" />
@@ -526,34 +610,68 @@ export default function App() {
 
             {/* Restaurant Cards Grid */}
             {filteredRestaurants.length === 0 ? (
-              <div className="bg-white border border-neutral-200 rounded-lg p-12 text-center space-y-3">
-                <UtensilsCrossed className="w-10 h-10 text-neutral-300 mx-auto" />
-                <h3 className="text-sm font-bold text-neutral-800">No restaurants match your filters</h3>
-                <p className="text-xs text-neutral-500 max-w-sm mx-auto">
-                  Try changing your search terms, clearing the window filter, or importing a restaurant list via CSV.
-                </p>
-                <div className="pt-2 flex items-center justify-center gap-2">
-                  <button
-                    onClick={() => {
-                      setSearchQuery('');
-                      setWindowFilter('all');
-                      setStatusFilter('all');
-                    }}
-                    className="px-3 py-1.5 text-xs font-semibold bg-neutral-100 hover:bg-neutral-200 text-neutral-800 rounded"
-                  >
-                    Reset Filters
-                  </button>
-                  <button
-                    onClick={() => {
-                      setEditingRestaurant(null);
-                      setIsAddEditOpen(true);
-                    }}
-                    className="px-3 py-1.5 text-xs font-bold bg-amber-500 hover:bg-amber-400 text-neutral-950 rounded shadow-xs"
-                  >
-                    + Add New Account
-                  </button>
+              restaurants.length === 0 ? (
+                <div className="bg-white border-2 border-dashed border-neutral-300 rounded-lg p-12 text-center space-y-3">
+                  <UtensilsCrossed className="w-10 h-10 text-neutral-400 mx-auto" />
+                  <h3 className="text-base font-bold text-neutral-900">Your Prospect List is Empty</h3>
+                  <p className="text-xs text-neutral-500 max-w-md mx-auto">
+                    You are working with a completely clean slate. Add your restaurant accounts from scratch, or import a list from CSV.
+                  </p>
+                  <div className="pt-3 flex flex-wrap items-center justify-center gap-2">
+                    <button
+                      onClick={() => {
+                        setEditingRestaurant(null);
+                        setIsAddEditOpen(true);
+                      }}
+                      className="px-4 py-2 text-xs font-bold bg-amber-500 hover:bg-amber-400 text-neutral-950 rounded shadow-xs flex items-center gap-1.5"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>+ Create Prospect from Scratch</span>
+                    </button>
+                    <button
+                      onClick={() => setIsCsvModalOpen(true)}
+                      className="px-4 py-2 text-xs font-semibold bg-neutral-900 hover:bg-neutral-800 text-white rounded"
+                    >
+                      Import CSV List
+                    </button>
+                    <button
+                      onClick={handleResetDemo}
+                      className="px-4 py-2 text-xs font-medium bg-neutral-100 hover:bg-neutral-200 text-neutral-700 rounded border border-neutral-200"
+                    >
+                      Restore Demo Territory
+                    </button>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className="bg-white border border-neutral-200 rounded-lg p-12 text-center space-y-3">
+                  <UtensilsCrossed className="w-10 h-10 text-neutral-300 mx-auto" />
+                  <h3 className="text-sm font-bold text-neutral-800">No restaurants match your filters</h3>
+                  <p className="text-xs text-neutral-500 max-w-sm mx-auto">
+                    Try changing your search terms, clearing the window filter, or importing a restaurant list via CSV.
+                  </p>
+                  <div className="pt-2 flex items-center justify-center gap-2">
+                    <button
+                      onClick={() => {
+                        setSearchQuery('');
+                        setWindowFilter('all');
+                        setStatusFilter('all');
+                      }}
+                      className="px-3 py-1.5 text-xs font-semibold bg-neutral-100 hover:bg-neutral-200 text-neutral-800 rounded"
+                    >
+                      Reset Filters
+                    </button>
+                    <button
+                      onClick={() => {
+                        setEditingRestaurant(null);
+                        setIsAddEditOpen(true);
+                      }}
+                      className="px-3 py-1.5 text-xs font-bold bg-amber-500 hover:bg-amber-400 text-neutral-950 rounded shadow-xs"
+                    >
+                      + Add New Account
+                    </button>
+                  </div>
+                </div>
+              )
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                 {filteredRestaurants.map((restaurant) => (
@@ -570,6 +688,7 @@ export default function App() {
                     onQuickAddTask={(r) => {
                       setSelectedRestaurant(r);
                     }}
+                    onDeleteRestaurant={handleDeleteRestaurant}
                   />
                 ))}
               </div>
@@ -589,6 +708,7 @@ export default function App() {
               setLogModalTarget({ restaurant: r, existingLog: null })
             }
             onQuickAddTask={(r) => setSelectedRestaurant(r)}
+            onDeleteRestaurant={handleDeleteRestaurant}
           />
         )}
 
@@ -602,6 +722,10 @@ export default function App() {
             onDeleteTask={handleDeleteTask}
             onAddTask={handleAddTask}
             onOpenDetail={setSelectedRestaurant}
+            onOpenAddRestaurant={() => {
+              setEditingRestaurant(null);
+              setIsAddEditOpen(true);
+            }}
           />
         )}
 
@@ -622,6 +746,7 @@ export default function App() {
               );
               showToast(`Advanced account stage to ${newStatus}`);
             }}
+            onDeleteRestaurant={handleDeleteRestaurant}
           />
         )}
       </main>
@@ -647,6 +772,7 @@ export default function App() {
           onDeleteTask={handleDeleteTask}
           onAddSample={handleAddSample}
           onRemoveSample={handleRemoveSample}
+          onDeleteRestaurant={handleDeleteRestaurant}
         />
       )}
 
@@ -671,6 +797,7 @@ export default function App() {
             setIsAddEditOpen(false);
             setEditingRestaurant(null);
           }}
+          onDelete={handleDeleteRestaurant}
         />
       )}
 
@@ -693,9 +820,21 @@ export default function App() {
           todos={todos}
           onImport={handleImportRestaurants}
           onResetDemo={handleResetDemo}
+          onClearAll={handleClearAllRestaurants}
           onClose={() => setIsCsvModalOpen(false)}
         />
       )}
+
+      {/* In-app Confirmation Dialog (Never blocked by iframe sandbox) */}
+      <ConfirmModal
+        isOpen={confirmDialog.isOpen}
+        title={confirmDialog.title}
+        message={confirmDialog.message}
+        confirmLabel={confirmDialog.confirmLabel}
+        isDestructive={confirmDialog.isDestructive}
+        onConfirm={confirmDialog.onConfirm}
+        onCancel={() => setConfirmDialog((prev) => ({ ...prev, isOpen: false }))}
+      />
 
       {/* Toast Notification */}
       {toastMessage && (

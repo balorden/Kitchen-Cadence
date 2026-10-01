@@ -2,7 +2,7 @@ import React from 'react';
 import { Restaurant, TodoItem, TouchpointLog } from '../types';
 import { evaluateServiceWindow, getWindowRange } from '../utils/timeWindow';
 import { computeFollowupCount, computeTotalAttempts } from '../utils/storage';
-import { Clock, Phone, MapPin, MessageSquare, Plus, AlertOctagon, CheckCircle2, ChevronRight } from 'lucide-react';
+import { Clock, Phone, MapPin, MessageSquare, Plus, AlertOctagon, CheckCircle2, ChevronRight, Trash2 } from 'lucide-react';
 
 interface RouteRunViewProps {
   restaurants: Restaurant[];
@@ -12,6 +12,7 @@ interface RouteRunViewProps {
   onOpenDetail: (restaurant: Restaurant) => void;
   onQuickLog: (restaurant: Restaurant) => void;
   onQuickAddTask: (restaurant: Restaurant) => void;
+  onDeleteRestaurant?: (restaurantId: string, name: string) => void;
 }
 
 export const RouteRunView: React.FC<RouteRunViewProps> = ({
@@ -22,6 +23,7 @@ export const RouteRunView: React.FC<RouteRunViewProps> = ({
   onOpenDetail,
   onQuickLog,
   onQuickAddTask,
+  onDeleteRestaurant,
 }) => {
   const currentMinutes = effectiveTime.getHours() * 60 + effectiveTime.getMinutes();
 
@@ -173,28 +175,41 @@ export const RouteRunView: React.FC<RouteRunViewProps> = ({
                   </div>
 
                   <div className="mt-4 pt-3 border-t border-neutral-200 flex items-center justify-between gap-2">
-                    {rest.phone && (
-                      <a
-                        href={`tel:${rest.phone}`}
-                        className="p-1.5 text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 rounded"
-                        title={`Call ${rest.phone}`}
+                    <div className="flex items-center gap-1.5">
+                      {rest.phone && (
+                        <a
+                          href={`tel:${rest.phone}`}
+                          className="p-1.5 text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 rounded"
+                          title={`Call ${rest.phone}`}
+                        >
+                          <Phone className="w-4 h-4" />
+                        </a>
+                      )}
+                      <button
+                        onClick={() => onQuickAddTask(rest)}
+                        className="text-xs text-neutral-600 hover:text-neutral-900 px-2 py-1 rounded border border-neutral-200"
                       >
-                        <Phone className="w-4 h-4" />
-                      </a>
-                    )}
-                    <button
-                      onClick={() => onQuickAddTask(rest)}
-                      className="text-xs text-neutral-600 hover:text-neutral-900 px-2 py-1 rounded border border-neutral-200"
-                    >
-                      + Task
-                    </button>
-                    <button
-                      onClick={() => onQuickLog(rest)}
-                      className="px-3 py-1.5 text-xs font-bold text-neutral-950 bg-amber-500 hover:bg-amber-400 rounded flex items-center gap-1 shadow-2xs"
-                    >
-                      <MessageSquare className="w-3.5 h-3.5" />
-                      <span>Log Touch</span>
-                    </button>
+                        + Task
+                      </button>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        onClick={() => onQuickLog(rest)}
+                        className="px-3 py-1.5 text-xs font-bold text-neutral-950 bg-amber-500 hover:bg-amber-400 rounded flex items-center gap-1 shadow-2xs"
+                      >
+                        <MessageSquare className="w-3.5 h-3.5" />
+                        <span>Log Touch</span>
+                      </button>
+                      {onDeleteRestaurant && (
+                        <button
+                          onClick={() => onDeleteRestaurant(rest.id, rest.name)}
+                          className="p-1.5 text-neutral-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors"
+                          title={`Delete ${rest.name}`}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               );
@@ -251,13 +266,24 @@ export const RouteRunView: React.FC<RouteRunViewProps> = ({
 
                   <div className="mt-3 pt-2.5 border-t border-neutral-100 flex items-center justify-between text-xs">
                     <span className="font-mono text-neutral-600">Follow-ups: {followups}</span>
-                    <button
-                      onClick={() => onOpenDetail(rest)}
-                      className="text-amber-700 hover:text-amber-800 font-semibold flex items-center gap-1"
-                    >
-                      <span>View Account</span>
-                      <ChevronRight className="w-3.5 h-3.5" />
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => onOpenDetail(rest)}
+                        className="text-amber-700 hover:text-amber-800 font-semibold flex items-center gap-1"
+                      >
+                        <span>View</span>
+                        <ChevronRight className="w-3.5 h-3.5" />
+                      </button>
+                      {onDeleteRestaurant && (
+                        <button
+                          onClick={() => onDeleteRestaurant(rest.id, rest.name)}
+                          className="p-1 text-neutral-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors"
+                          title={`Delete ${rest.name}`}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               );
@@ -286,7 +312,7 @@ export const RouteRunView: React.FC<RouteRunViewProps> = ({
                   key={rest.id}
                   className="p-3 flex items-center justify-between gap-3 hover:bg-neutral-50 transition-colors"
                 >
-                  <div className="min-w-0">
+                  <div className="min-w-0 flex-1">
                     <button
                       onClick={() => onOpenDetail(rest)}
                       className="font-bold text-neutral-900 hover:text-amber-600 truncate block text-left"
@@ -295,9 +321,20 @@ export const RouteRunView: React.FC<RouteRunViewProps> = ({
                     </button>
                     <span className="text-[11px] text-rose-600 block">{reason}</span>
                   </div>
-                  <span className="text-[10px] text-neutral-400 shrink-0 font-mono">
-                    Window: {windowDesc}
-                  </span>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-[10px] text-neutral-400 font-mono">
+                      {windowDesc}
+                    </span>
+                    {onDeleteRestaurant && (
+                      <button
+                        onClick={() => onDeleteRestaurant(rest.id, rest.name)}
+                        className="p-1 text-neutral-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors"
+                        title={`Delete ${rest.name}`}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
                 </div>
               ))
             )}
@@ -322,7 +359,7 @@ export const RouteRunView: React.FC<RouteRunViewProps> = ({
                   key={rest.id}
                   className="p-3 flex items-center justify-between gap-3 hover:bg-neutral-50 transition-colors"
                 >
-                  <div className="min-w-0">
+                  <div className="min-w-0 flex-1">
                     <button
                       onClick={() => onOpenDetail(rest)}
                       className="font-bold text-neutral-900 hover:text-amber-600 truncate block text-left"
@@ -331,9 +368,20 @@ export const RouteRunView: React.FC<RouteRunViewProps> = ({
                     </button>
                     <span className="text-[11px] text-neutral-500 block">{rest.cuisine}</span>
                   </div>
-                  <span className="text-[11px] text-rose-700 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded font-medium shrink-0">
-                    {reason}
-                  </span>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-[11px] text-rose-700 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded font-medium">
+                      {reason}
+                    </span>
+                    {onDeleteRestaurant && (
+                      <button
+                        onClick={() => onDeleteRestaurant(rest.id, rest.name)}
+                        className="p-1 text-neutral-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors"
+                        title={`Delete ${rest.name}`}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
                 </div>
               ))
             )}

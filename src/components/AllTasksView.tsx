@@ -10,6 +10,7 @@ interface AllTasksViewProps {
   onDeleteTask: (taskId: string) => void;
   onAddTask: (restaurantId: string, task: string, dueDate: string | null) => void;
   onOpenDetail: (restaurant: Restaurant) => void;
+  onOpenAddRestaurant?: () => void;
 }
 
 export const AllTasksView: React.FC<AllTasksViewProps> = ({
@@ -20,6 +21,7 @@ export const AllTasksView: React.FC<AllTasksViewProps> = ({
   onDeleteTask,
   onAddTask,
   onOpenDetail,
+  onOpenAddRestaurant,
 }) => {
   const [filter, setFilter] = useState<'all' | 'due_today' | 'overdue' | 'completed'>('all');
   const [selectedRestaurantId, setSelectedRestaurantId] = useState<string>(
@@ -99,105 +101,123 @@ export const AllTasksView: React.FC<AllTasksViewProps> = ({
       </div>
 
       {/* Fast Task Creation Bar */}
-      <form onSubmit={handleCreateTask} className="bg-white border border-neutral-200 rounded-lg p-4 space-y-3">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-bold text-neutral-800">Fast Add Rep Task</span>
-          <span className="text-[11px] text-neutral-500 font-medium">Owner: <strong className="text-neutral-900">Me</strong></span>
+      {restaurants.length === 0 ? (
+        <div className="bg-white border border-neutral-200 rounded-lg p-6 text-center text-xs text-neutral-600 space-y-2">
+          <p className="font-semibold text-neutral-800 text-sm">No prospect accounts created yet.</p>
+          <p className="text-neutral-500">Create a restaurant prospect first to begin tracking rep-owned tasks and appointments.</p>
+          {onOpenAddRestaurant && (
+            <div className="pt-1">
+              <button
+                type="button"
+                onClick={onOpenAddRestaurant}
+                className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-neutral-950 font-bold rounded shadow-xs"
+              >
+                + Create Prospect from Scratch
+              </button>
+            </div>
+          )}
         </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-          <select
-            value={selectedRestaurantId}
-            onChange={(e) => setSelectedRestaurantId(e.target.value)}
-            className="px-3 py-2 border border-neutral-300 rounded text-xs bg-white text-neutral-900 focus:ring-1 focus:ring-amber-500"
-          >
-            {restaurants.map((r) => (
-              <option key={r.id} value={r.id}>
-                {r.name}
-              </option>
-            ))}
-          </select>
-
-          <input
-            type="text"
-            required
-            value={newTaskText}
-            onChange={(e) => setNewTaskText(e.target.value)}
-            placeholder="e.g. Bring spec sheet for 00 Flour & quote for 2 Parmigiano wheels"
-            className="sm:col-span-2 px-3 py-2 border border-neutral-300 rounded text-xs bg-white text-neutral-900 focus:ring-1 focus:ring-amber-500"
-          />
-        </div>
-
-        {/* Date presets */}
-        <div className="flex items-center justify-between flex-wrap gap-2 pt-1 border-t border-neutral-100">
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="text-[11px] font-semibold text-neutral-500">Explicit Due Date (Rule 3):</span>
-            <button
-              type="button"
-              onClick={() => handleDatePreset(0)}
-              className={`px-2 py-0.5 rounded text-[11px] border ${
-                taskDueDate === todayStr
-                  ? 'bg-amber-600 text-white border-amber-600 font-bold'
-                  : 'bg-white text-neutral-700 border-neutral-300 hover:bg-neutral-100'
-              }`}
-            >
-              [Today]
-            </button>
-            <button
-              type="button"
-              onClick={() => handleDatePreset(1)}
-              className="px-2 py-0.5 rounded text-[11px] bg-white text-neutral-700 border border-neutral-300 hover:bg-neutral-100"
-            >
-              [Tomorrow]
-            </button>
-            <button
-              type="button"
-              onClick={() => handleDatePreset(3)}
-              className="px-2 py-0.5 rounded text-[11px] bg-white text-neutral-700 border border-neutral-300 hover:bg-neutral-100"
-            >
-              [+3 Days]
-            </button>
-            <button
-              type="button"
-              onClick={() => handleDatePreset(7)}
-              className="px-2 py-0.5 rounded text-[11px] bg-white text-neutral-700 border border-neutral-300 hover:bg-neutral-100"
-            >
-              [+1 Week]
-            </button>
-            <button
-              type="button"
-              onClick={() => handleDatePreset(14)}
-              className="px-2 py-0.5 rounded text-[11px] bg-white text-neutral-700 border border-neutral-300 hover:bg-neutral-100"
-            >
-              [+2 Weeks]
-            </button>
-            <button
-              type="button"
-              onClick={() => handleDatePreset(null)}
-              className={`px-2 py-0.5 rounded text-[11px] border ${
-                taskDueDate === null
-                  ? 'bg-neutral-800 text-white border-neutral-800'
-                  : 'bg-white text-neutral-700 border-neutral-300'
-              }`}
-            >
-              [Needs Date]
-            </button>
-            {taskDueDate && (
-              <span className="font-mono text-[11px] text-amber-700 font-bold ml-1">
-                Due: {taskDueDate}
-              </span>
-            )}
+      ) : (
+        <form onSubmit={handleCreateTask} className="bg-white border border-neutral-200 rounded-lg p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-neutral-800">Fast Add Rep Task</span>
+            <span className="text-[11px] text-neutral-500 font-medium">Owner: <strong className="text-neutral-900">Me</strong></span>
           </div>
 
-          <button
-            type="submit"
-            className="px-4 py-1.5 bg-neutral-900 hover:bg-neutral-800 text-white font-bold rounded text-xs transition-colors flex items-center gap-1.5 shadow-2xs"
-          >
-            <Plus className="w-3.5 h-3.5 text-amber-400" />
-            <span>Add Rep Task</span>
-          </button>
-        </div>
-      </form>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <select
+              value={selectedRestaurantId}
+              onChange={(e) => setSelectedRestaurantId(e.target.value)}
+              className="px-3 py-2 border border-neutral-300 rounded text-xs bg-white text-neutral-900 focus:ring-1 focus:ring-amber-500"
+            >
+              {restaurants.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.name}
+                </option>
+              ))}
+            </select>
+
+            <input
+              type="text"
+              required
+              value={newTaskText}
+              onChange={(e) => setNewTaskText(e.target.value)}
+              placeholder="e.g. Bring spec sheet for 00 Flour & quote for 2 Parmigiano wheels"
+              className="sm:col-span-2 px-3 py-2 border border-neutral-300 rounded text-xs bg-white text-neutral-900 focus:ring-1 focus:ring-amber-500"
+            />
+          </div>
+
+          {/* Date presets */}
+          <div className="flex items-center justify-between flex-wrap gap-2 pt-1 border-t border-neutral-100">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-[11px] font-semibold text-neutral-500">Explicit Due Date (Rule 3):</span>
+              <button
+                type="button"
+                onClick={() => handleDatePreset(0)}
+                className={`px-2 py-0.5 rounded text-[11px] border ${
+                  taskDueDate === todayStr
+                    ? 'bg-amber-600 text-white border-amber-600 font-bold'
+                    : 'bg-white text-neutral-700 border-neutral-300 hover:bg-neutral-100'
+                }`}
+              >
+                [Today]
+              </button>
+              <button
+                type="button"
+                onClick={() => handleDatePreset(1)}
+                className="px-2 py-0.5 rounded text-[11px] bg-white text-neutral-700 border border-neutral-300 hover:bg-neutral-100"
+              >
+                [Tomorrow]
+              </button>
+              <button
+                type="button"
+                onClick={() => handleDatePreset(3)}
+                className="px-2 py-0.5 rounded text-[11px] bg-white text-neutral-700 border border-neutral-300 hover:bg-neutral-100"
+              >
+                [+3 Days]
+              </button>
+              <button
+                type="button"
+                onClick={() => handleDatePreset(7)}
+                className="px-2 py-0.5 rounded text-[11px] bg-white text-neutral-700 border border-neutral-300 hover:bg-neutral-100"
+              >
+                [+1 Week]
+              </button>
+              <button
+                type="button"
+                onClick={() => handleDatePreset(14)}
+                className="px-2 py-0.5 rounded text-[11px] bg-white text-neutral-700 border border-neutral-300 hover:bg-neutral-100"
+              >
+                [+2 Weeks]
+              </button>
+              <button
+                type="button"
+                onClick={() => handleDatePreset(null)}
+                className={`px-2 py-0.5 rounded text-[11px] border ${
+                  taskDueDate === null
+                    ? 'bg-neutral-800 text-white border-neutral-800'
+                    : 'bg-white text-neutral-700 border-neutral-300'
+                }`}
+              >
+                [Needs Date]
+              </button>
+              {taskDueDate && (
+                <span className="font-mono text-[11px] text-amber-700 font-bold ml-1">
+                  Due: {taskDueDate}
+                </span>
+              )}
+            </div>
+
+            <button
+              type="submit"
+              className="px-4 py-1.5 bg-neutral-900 hover:bg-neutral-800 text-white font-bold rounded text-xs transition-colors flex items-center gap-1.5 shadow-2xs"
+            >
+              <Plus className="w-3.5 h-3.5 text-amber-400" />
+              <span>Add Rep Task</span>
+            </button>
+          </div>
+        </form>
+      )}
 
       {/* Filter Tabs */}
       <div className="flex items-center gap-1 p-1 bg-neutral-200/80 rounded-lg max-w-fit text-xs">

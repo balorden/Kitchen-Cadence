@@ -34,6 +34,7 @@ interface RestaurantDetailModalProps {
   onDeleteTask: (taskId: string) => void;
   onAddSample: (restaurantId: string, sampleName: string) => void;
   onRemoveSample: (restaurantId: string, sampleName: string) => void;
+  onDeleteRestaurant: (restaurantId: string, name: string) => void;
 }
 
 export const RestaurantDetailModal: React.FC<RestaurantDetailModalProps> = ({
@@ -50,6 +51,7 @@ export const RestaurantDetailModal: React.FC<RestaurantDetailModalProps> = ({
   onDeleteTask,
   onAddSample,
   onRemoveSample,
+  onDeleteRestaurant,
 }) => {
   const windowEval = evaluateServiceWindow(restaurant, effectiveTime);
   const followupCount = computeFollowupCount(restaurant, logs);
@@ -128,6 +130,14 @@ export const RestaurantDetailModal: React.FC<RestaurantDetailModalProps> = ({
             >
               <Edit2 className="w-3.5 h-3.5" />
               <span>Edit Account</span>
+            </button>
+            <button
+              onClick={() => onDeleteRestaurant(restaurant.id, restaurant.name)}
+              className="px-3 py-1.5 text-xs font-medium text-rose-300 hover:text-white bg-rose-950/60 hover:bg-rose-800 border border-rose-800/80 rounded transition-colors flex items-center gap-1.5"
+              title="Delete this prospect and all associated records"
+            >
+              <Trash2 className="w-3.5 h-3.5 text-rose-400" />
+              <span>Delete Prospect</span>
             </button>
             <button
               onClick={onClose}
@@ -593,7 +603,17 @@ export const RestaurantDetailModal: React.FC<RestaurantDetailModalProps> = ({
 
         {/* Modal Footer */}
         <div className="px-6 py-3 border-t border-neutral-200 bg-neutral-50 flex items-center justify-between text-xs text-neutral-500 shrink-0">
-          <span>Account created: {new Date(restaurant.created_at).toLocaleDateString()}</span>
+          <div className="flex items-center gap-4">
+            <span>Account created: {new Date(restaurant.created_at).toLocaleDateString()}</span>
+            <button
+              type="button"
+              onClick={() => onDeleteRestaurant(restaurant.id, restaurant.name)}
+              className="text-xs text-rose-600 hover:text-rose-800 font-semibold flex items-center gap-1 hover:underline transition-colors"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>Delete Prospect</span>
+            </button>
+          </div>
           <button
             type="button"
             onClick={onClose}

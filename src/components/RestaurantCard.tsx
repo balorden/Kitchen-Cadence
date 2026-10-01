@@ -2,7 +2,7 @@ import React from 'react';
 import { Restaurant, TodoItem, TouchpointLog } from '../types';
 import { evaluateServiceWindow } from '../utils/timeWindow';
 import { computeFollowupCount, computeTotalAttempts } from '../utils/storage';
-import { Phone, MapPin, Calendar, CheckSquare, Plus, Clock, UserCheck, MessageSquare, ChevronRight } from 'lucide-react';
+import { Phone, MapPin, Calendar, CheckSquare, Plus, Clock, UserCheck, MessageSquare, ChevronRight, Trash2 } from 'lucide-react';
 
 interface RestaurantCardProps {
   restaurant: Restaurant;
@@ -12,6 +12,7 @@ interface RestaurantCardProps {
   onOpenDetail: (restaurant: Restaurant) => void;
   onQuickLog: (restaurant: Restaurant) => void;
   onQuickAddTask: (restaurant: Restaurant) => void;
+  onDeleteRestaurant?: (restaurantId: string, name: string) => void;
 }
 
 export const RestaurantCard: React.FC<RestaurantCardProps> = ({
@@ -22,6 +23,7 @@ export const RestaurantCard: React.FC<RestaurantCardProps> = ({
   onOpenDetail,
   onQuickLog,
   onQuickAddTask,
+  onDeleteRestaurant,
 }) => {
   const windowEval = evaluateServiceWindow(restaurant, effectiveTime);
   const followupCount = computeFollowupCount(restaurant, logs);
@@ -217,6 +219,19 @@ export const RestaurantCard: React.FC<RestaurantCardProps> = ({
           >
             Details
           </button>
+
+          {onDeleteRestaurant && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onDeleteRestaurant(restaurant.id, restaurant.name);
+              }}
+              className="p-1.5 text-neutral-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors"
+              title={`Delete ${restaurant.name}`}
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          )}
         </div>
       </div>
     </div>

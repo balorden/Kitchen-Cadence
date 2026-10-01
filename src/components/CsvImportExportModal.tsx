@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Restaurant, TodoItem, TouchpointLog } from '../types';
 import { exportToCsv, generateSampleCsv, parseCsv } from '../utils/storage';
-import { X, Upload, Download, RefreshCw, FileText, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { X, Upload, Download, RefreshCw, FileText, CheckCircle2, AlertTriangle, Trash2 } from 'lucide-react';
 
 interface CsvImportExportModalProps {
   restaurants: Restaurant[];
@@ -9,6 +9,7 @@ interface CsvImportExportModalProps {
   todos: TodoItem[];
   onImport: (newRestaurants: Restaurant[]) => void;
   onResetDemo: () => void;
+  onClearAll?: () => void;
   onClose: () => void;
 }
 
@@ -18,6 +19,7 @@ export const CsvImportExportModal: React.FC<CsvImportExportModalProps> = ({
   todos,
   onImport,
   onResetDemo,
+  onClearAll,
   onClose,
 }) => {
   const [activeTab, setActiveTab] = useState<'import' | 'export' | 'reset'>('import');
@@ -278,30 +280,52 @@ export const CsvImportExportModal: React.FC<CsvImportExportModalProps> = ({
           )}
 
           {activeTab === 'reset' && (
-            <div className="space-y-4">
-              <div className="p-4 bg-rose-50 border border-rose-200 rounded-lg text-rose-800 space-y-2">
-                <div className="flex items-center gap-2 font-bold text-sm">
-                  <AlertTriangle className="w-5 h-5 text-rose-600" />
-                  <span>Reset to Demo Data</span>
+            <div className="space-y-6">
+              {/* Option A: Clear All Prospects & Start Fresh */}
+              {onClearAll && (
+                <div className="p-4 bg-neutral-50 border border-neutral-200 rounded-lg space-y-2.5">
+                  <div className="flex items-center gap-2 font-bold text-neutral-900 text-sm">
+                    <Trash2 className="w-5 h-5 text-neutral-700" />
+                    <span>Start from Scratch (Delete All Prospects)</span>
+                  </div>
+                  <p className="text-xs text-neutral-600 leading-relaxed">
+                    Remove all prospects, interaction logs, and to-do tasks. This gives you a completely clean slate so you can build your own accounts from scratch.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onClearAll();
+                      onClose();
+                    }}
+                    className="w-full py-2.5 bg-neutral-900 hover:bg-neutral-800 text-white font-bold rounded transition-colors flex items-center justify-center gap-2"
+                  >
+                    <Trash2 className="w-4 h-4 text-rose-400" />
+                    <span>Clear All Prospects & Start from Scratch</span>
+                  </button>
                 </div>
-                <p className="text-xs leading-relaxed">
-                  This will reload the 9 realistic demo accounts (Trattoria Lucca, Ember & Oak, L'Étoile French, Masa Cantina, etc.) with pre-configured service windows, sample drops, decision-maker touchpoint logs, and explicit rep tasks.
-                </p>
-              </div>
+              )}
 
-              <button
-                type="button"
-                onClick={() => {
-                  if (confirm('Are you sure you want to reset all data back to original demo values?')) {
+              {/* Option B: Reload Demo Prospects */}
+              <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg text-amber-900 space-y-2.5">
+                <div className="flex items-center gap-2 font-bold text-sm">
+                  <RefreshCw className="w-4 h-4 text-amber-600" />
+                  <span>Restore Demo Prospects</span>
+                </div>
+                <p className="text-xs leading-relaxed text-amber-800">
+                  Reload the 9 sample restaurant accounts (Trattoria Lucca, Ember & Oak, L'Étoile French, Masa Cantina, etc.) with pre-configured service windows, sample drops, decision-maker touchpoint logs, and explicit rep tasks.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
                     onResetDemo();
                     onClose();
-                  }
-                }}
-                className="w-full py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded transition-colors flex items-center justify-center gap-2"
-              >
-                <RefreshCw className="w-4 h-4" />
-                <span>Confirm Reset to Demo State</span>
-              </button>
+                  }}
+                  className="w-full py-2.5 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded transition-colors flex items-center justify-center gap-2"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                  <span>Reload Pre-configured Demo Territory</span>
+                </button>
+              </div>
             </div>
           )}
         </div>

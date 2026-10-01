@@ -1,18 +1,20 @@
 import React, { useState } from 'react';
 import { ContactRole, PipelineStatus, Restaurant, ServiceWindow } from '../types';
 import { DAYS_OF_WEEK } from '../utils/timeWindow';
-import { X, Building2, Clock, Calendar, CheckSquare } from 'lucide-react';
+import { X, Building2, Clock, Calendar, CheckSquare, Trash2 } from 'lucide-react';
 
 interface AddEditRestaurantModalProps {
   restaurant?: Restaurant | null;
   onSave: (restaurant: Restaurant) => void;
   onClose: () => void;
+  onDelete?: (restaurantId: string, name: string) => void;
 }
 
 export const AddEditRestaurantModal: React.FC<AddEditRestaurantModalProps> = ({
   restaurant,
   onSave,
   onClose,
+  onDelete,
 }) => {
   const [name, setName] = useState(restaurant ? restaurant.name : '');
   const [cuisine, setCuisine] = useState(restaurant ? restaurant.cuisine : '');
@@ -379,20 +381,38 @@ export const AddEditRestaurantModal: React.FC<AddEditRestaurantModalProps> = ({
           </div>
 
           {/* Footer Buttons */}
-          <div className="pt-3 flex items-center justify-end gap-2 border-t border-neutral-200">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 text-xs font-medium text-neutral-700 hover:text-neutral-900 bg-white border border-neutral-300 rounded hover:bg-neutral-50 transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="px-4 py-2 text-xs font-bold text-neutral-950 bg-amber-500 hover:bg-amber-400 rounded transition-colors shadow-xs"
-            >
-              {restaurant ? 'Save Changes' : 'Create Account'}
-            </button>
+          <div className="pt-3 flex items-center justify-between gap-2 border-t border-neutral-200">
+            {restaurant && onDelete ? (
+              <button
+                type="button"
+                onClick={() => {
+                  onDelete(restaurant.id, restaurant.name);
+                  onClose();
+                }}
+                className="px-3 py-2 text-xs font-semibold text-rose-600 hover:text-white hover:bg-rose-600 border border-rose-300 rounded transition-colors flex items-center gap-1.5"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Delete Prospect</span>
+              </button>
+            ) : (
+              <div></div>
+            )}
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2 text-xs font-medium text-neutral-700 hover:text-neutral-900 bg-white border border-neutral-300 rounded hover:bg-neutral-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="px-4 py-2 text-xs font-bold text-neutral-950 bg-amber-500 hover:bg-amber-400 rounded transition-colors shadow-xs"
+              >
+                {restaurant ? 'Save Changes' : 'Create Account'}
+              </button>
+            </div>
           </div>
         </form>
       </div>

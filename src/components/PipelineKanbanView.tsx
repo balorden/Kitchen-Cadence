@@ -2,7 +2,7 @@ import React from 'react';
 import { PipelineStatus, Restaurant, TodoItem, TouchpointLog } from '../types';
 import { evaluateServiceWindow } from '../utils/timeWindow';
 import { computeFollowupCount, computeTotalAttempts } from '../utils/storage';
-import { Kanban, Clock, ChevronRight, MessageSquare } from 'lucide-react';
+import { Kanban, Clock, ChevronRight, MessageSquare, Trash2 } from 'lucide-react';
 
 interface PipelineKanbanViewProps {
   restaurants: Restaurant[];
@@ -12,6 +12,7 @@ interface PipelineKanbanViewProps {
   onOpenDetail: (restaurant: Restaurant) => void;
   onQuickLog: (restaurant: Restaurant) => void;
   onUpdateStatus: (restaurantId: string, newStatus: PipelineStatus) => void;
+  onDeleteRestaurant?: (restaurantId: string, name: string) => void;
 }
 
 export const PipelineKanbanView: React.FC<PipelineKanbanViewProps> = ({
@@ -22,6 +23,7 @@ export const PipelineKanbanView: React.FC<PipelineKanbanViewProps> = ({
   onOpenDetail,
   onQuickLog,
   onUpdateStatus,
+  onDeleteRestaurant,
 }) => {
   const stages: Array<{ status: PipelineStatus; color: string }> = [
     { status: 'New Lead', color: 'border-sky-500 text-sky-700 bg-sky-50' },
@@ -161,6 +163,16 @@ export const PipelineKanbanView: React.FC<PipelineKanbanViewProps> = ({
                           >
                             <ChevronRight className="w-3.5 h-3.5" />
                           </button>
+
+                          {onDeleteRestaurant && (
+                            <button
+                              onClick={() => onDeleteRestaurant(rest.id, rest.name)}
+                              className="p-1 text-neutral-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors"
+                              title={`Delete ${rest.name}`}
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
                         </div>
                       </div>
                     );

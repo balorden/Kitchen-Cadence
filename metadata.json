@@ -1,0 +1,6 @@
+{
+  "name": "KitchenCadence",
+  "description": "Outside restaurant food sales follow-up app with service window detection, decision-maker contact counter, and rep-owned task management.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
